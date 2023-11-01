@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  web_server:
+    # NOTE: image is not specified, so it will be built from Dockerfile
+    # NOTE: default name: fastapi-sqlmodel-alembic_web_server_1
+    container_name: endpoints_server
+    # NOTE：指定 Dockerfile 所在的目录
+    build: ./
+    command: uvicorn app.main:app --reload --workers 1 --host 0.0.0.0 --port 8000
+    volumes:
+      - ./:/usr/src/app
+    ports:
+      # NOTE：open http://localhost:8004
+      - 8004:8000
+    environment:
+      # NOTE：host 为 db 服务的名称
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@db_server:5432/fastapi_sqlmodel_alembic
+    depends_on:
+      # NOTE：依赖 db 服务，db 服务启动后才启动 web 服务
+      - db_server
+
+  db_server:
+    image: postgres:15.3
+    # NOTE：default name：fastapi-sqlmodel-alembic_db_server_1
+    container_name: postgres_server
+    # NOTE：让数据库客户端可以连接
+    ports:
+      - 5432:5432
+    expose:
+      - 5432
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD-:postgres}
+      - POSTGRES_DB=${POSTGRES_DB:-fastapi_sqlmodel_alembic}
